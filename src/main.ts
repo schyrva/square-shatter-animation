@@ -68,3 +68,44 @@ function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon
   }
   return result;
 }
+
+function computeCentroid(polygon: Polygon): Point {
+  let sumX = 0, sumY = 0;
+  for (const p of polygon) {
+    sumX += p.x;
+    sumY += p.y;
+  }
+  return { x: sumX / polygon.length, y: sumY / polygon.length };
+}
+
+function polygonArea(polygon: Polygon): number {
+  let area = 0;
+  for (let i = 0; i < polygon.length; i++) {
+    const j = (i + 1) % polygon.length;
+    area += polygon[i].x * polygon[j].y - polygon[j].x * polygon[i].y;
+  }
+  return Math.abs(area) / 2;
+}
+
+interface Fragment {
+  vertices: Point[];
+  centroid: Point;
+  color: string;
+}
+
+function polygonsToFragments(polygons: Polygon[]): Fragment[] {
+  return polygons
+    .filter(poly => poly.length >= 3 && polygonArea(poly) > 3)
+    .map(poly => ({
+      vertices: poly,
+      centroid: computeCentroid(poly),
+      color: getRandomColor()
+    }));
+}
+
+function getRandomColor(): string {
+  const r = Math.floor(100 + Math.random() * 155);
+  const g = Math.floor(100 + Math.random() * 155);
+  const b = Math.floor(100 + Math.random() * 155);
+  return `rgb(${r}, ${g}, ${b})`;
+}
