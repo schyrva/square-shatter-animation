@@ -1,11 +1,18 @@
-let canvas = document.getElementById("canvas") as HTMLCanvasElement;
-let ctx = canvas.getContext("2d")!;
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
 interface Point { x: number; y: number; }
 type Polygon = Point[];
 type Line = [Point, Point];
+interface Fragment { vertices: Point[]; centroid: Point; color: string; }
+
+let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+let ctx = canvas.getContext("2d")!;
+let canvasWidth = window.innerWidth;
+let canvasHeight = window.innerHeight;
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+let innerSquareSize: number, offsetX: number, offsetY: number, squareCenter: Point;
+let fragments: Fragment[] = [];
+let subdivisionGenerated = false;
+const SPEED = 0.02, MAX_SCALE = 4.0, AREA_THRESHOLD = 3, MIN_LINES = 1, MAX_LINES = 20;
 
 function getRandomBoundaryPoint(size: number): Point {
   const side = Math.floor(Math.random() * 4);
@@ -55,9 +62,7 @@ function cutPolygonWithLine(polygon: Polygon, p1: Point, p2: Point): Polygon[] {
 
 function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon[] {
   let result: Polygon[] = [];
-  for (const poly of polygons) {
-    result = result.concat(cutPolygonWithLine(poly, p1, p2));
-  }
+  for (const poly of polygons) { result = result.concat(cutPolygonWithLine(poly, p1, p2)); }
   return result;
 }
 
@@ -76,14 +81,8 @@ function polygonArea(polygon: Polygon): number {
   return Math.abs(area) / 2;
 }
 
-interface Fragment {
-  vertices: Point[];
-  centroid: Point;
-  color: string;
-}
-
 function polygonsToFragments(polygons: Polygon[]): Fragment[] {
-  return polygons.filter(poly => poly.length >= 3 && polygonArea(poly) > 3)
+  return polygons.filter(poly => poly.length >= 3 && polygonArea(poly) > AREA_THRESHOLD)
     .map(poly => ({ vertices: poly, centroid: computeCentroid(poly), color: getRandomColor() }));
 }
 
@@ -98,10 +97,7 @@ let canvasWidth = window.innerWidth;
 let canvasHeight = window.innerHeight;
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
-let innerSquareSize: number;
-let offsetX: number;
-let offsetY: number;
-let squareCenter: Point;
+let innerSquareSize: number, offsetX: number, offsetY: number, squareCenter: Point;
 
 function resizeCanvas() {
   canvasWidth = window.innerWidth;
@@ -126,7 +122,7 @@ function createSubdivision() {
     { x: offsetX + innerSquareSize, y: offsetY + innerSquareSize },
     { x: offsetX, y: offsetY + innerSquareSize }
   ]];
-  const lineCount = Math.floor(Math.random() * 20) + 1;
+  const lineCount = Math.floor(Math.random() * (MAX_LINES - MIN_LINES + 1)) + MIN_LINES;
   const lines = generateRandomLines(lineCount, innerSquareSize);
   const adjustedLines = lines.map(([p1, p2]) => ([
     { x: p1.x + offsetX, y: p1.y + offsetY },
@@ -141,13 +137,8 @@ function createSubdivision() {
 let scale = 1.0, growing = true;
 function animate() {
   requestAnimationFrame(animate);
-  if (growing) {
-    scale += 0.02;
-    if (scale >= 4.0) { scale = 4.0; growing = false; }
-  } else {
-    scale -= 0.02;
-    if (scale <= 1.0) { scale = 1.0; growing = true; if (!subdivisionGenerated) { createSubdivision(); subdivisionGenerated = true; } }
-  }
+  if (growing) { scale += SPEED; if (scale >= MAX_SCALE) { scale = MAX_SCALE; growing = false; } }
+  else { scale -= SPEED; if (scale <= 1.0) { scale = 1.0; growing = true; if (!subdivisionGenerated) { createSubdivision(); subdivisionGenerated = true; } } }
   if (scale > 1.0) subdivisionGenerated = false;
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   fragments.forEach(frag => drawFragment(frag, scale));
@@ -163,8 +154,7 @@ function drawFragment(fragment: Fragment, s: number) {
     const localOffsetY = v.y - fragment.centroid.y;
     const vx = cx + localOffsetX;
     const vy = cy + localOffsetY;
-    if (i === 0) ctx.moveTo(vx, vy);
-    else ctx.lineTo(vx, vy);
+    if (i === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
   });
   ctx.closePath();
   ctx.fillStyle = fragment.color;
