@@ -1,18 +1,38 @@
-interface Point { x: number; y: number; }
+interface Point {
+  x: number;
+  y: number;
+}
+
 type Polygon = Point[];
 type Line = [Point, Point];
-interface Fragment { vertices: Point[]; centroid: Point; color: string; }
+
+interface Fragment {
+  vertices: Point[];
+  centroid: Point;
+  color: string;
+}
 
 let canvas = document.getElementById("canvas") as HTMLCanvasElement;
 let ctx = canvas.getContext("2d")!;
+
 let canvasWidth = window.innerWidth;
 let canvasHeight = window.innerHeight;
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
-let innerSquareSize: number, offsetX: number, offsetY: number, squareCenter: Point;
+
+let innerSquareSize: number;
+let offsetX: number;
+let offsetY: number;
+let squareCenter: Point;
+
 let fragments: Fragment[] = [];
 let subdivisionGenerated = false;
-const SPEED = 0.02, MAX_SCALE = 4.0, AREA_THRESHOLD = 3, MIN_LINES = 1, MAX_LINES = 20;
+
+const SPEED = 0.02;
+const MAX_SCALE = 4.0;
+const AREA_THRESHOLD = 3;
+const MIN_LINES = 1;
+const MAX_LINES = 20;
 
 function getRandomBoundaryPoint(size: number): Point {
   const side = Math.floor(Math.random() * 4);
@@ -47,7 +67,8 @@ function segmentIntersection(p1: Point, p2: Point, p3: Point, p4: Point): Point 
 }
 
 function cutPolygonWithLine(polygon: Polygon, p1: Point, p2: Point): Polygon[] {
-  const polyA: Polygon = [], polyB: Polygon = [];
+  const polyA: Polygon = [];
+  const polyB: Polygon = [];
   for (let i = 0; i < polygon.length; i++) {
     const current = polygon[i];
     const next = polygon[(i + 1) % polygon.length];
@@ -55,20 +76,28 @@ function cutPolygonWithLine(polygon: Polygon, p1: Point, p2: Point): Polygon[] {
     if (sideCurrent >= 0) polyA.push(current);
     if (sideCurrent <= 0) polyB.push(current);
     const intersect = segmentIntersection(current, next, p1, p2);
-    if (intersect) { polyA.push(intersect); polyB.push(intersect); }
+    if (intersect) {
+      polyA.push(intersect);
+      polyB.push(intersect);
+    }
   }
-  return (polyA.length === 0 || polyB.length === 0) ? [polygon] : [polyA, polyB];
+  return polyA.length === 0 || polyB.length === 0 ? [polygon] : [polyA, polyB];
 }
 
 function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon[] {
   let result: Polygon[] = [];
-  for (const poly of polygons) { result = result.concat(cutPolygonWithLine(poly, p1, p2)); }
+  for (const poly of polygons) {
+    result = result.concat(cutPolygonWithLine(poly, p1, p2));
+  }
   return result;
 }
 
 function computeCentroid(polygon: Polygon): Point {
   let sumX = 0, sumY = 0;
-  for (const p of polygon) { sumX += p.x; sumY += p.y; }
+  for (const p of polygon) {
+    sumX += p.x;
+    sumY += p.y;
+  }
   return { x: sumX / polygon.length, y: sumY / polygon.length };
 }
 
@@ -82,22 +111,14 @@ function polygonArea(polygon: Polygon): number {
 }
 
 function polygonsToFragments(polygons: Polygon[]): Fragment[] {
-  return polygons.filter(poly => poly.length >= 3 && polygonArea(poly) > AREA_THRESHOLD)
-    .map(poly => ({ vertices: poly, centroid: computeCentroid(poly), color: getRandomColor() }));
+  return polygons
+    .filter(poly => poly.length >= 3 && polygonArea(poly) > AREA_THRESHOLD)
+    .map(poly => ({
+      vertices: poly,
+      centroid: computeCentroid(poly),
+      color: getRandomColor()
+    }));
 }
-
-function getRandomColor(): string {
-  const r = Math.floor(100 + Math.random() * 155);
-  const g = Math.floor(100 + Math.random() * 155);
-  const b = Math.floor(100 + Math.random() * 155);
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
-let canvasWidth = window.innerWidth;
-let canvasHeight = window.innerHeight;
-canvas.width = canvasWidth;
-canvas.height = canvasHeight;
-let innerSquareSize: number, offsetX: number, offsetY: number, squareCenter: Point;
 
 function resizeCanvas() {
   canvasWidth = window.innerWidth;
@@ -134,15 +155,40 @@ function createSubdivision() {
   fragments = polygonsToFragments(polygons);
 }
 
-let scale = 1.0, growing = true;
+function getRandomColor(): string {
+  const r = Math.floor(100 + Math.random() * 155);
+  const g = Math.floor(100 + Math.random() * 155);
+  const b = Math.floor(100 + Math.random() * 155);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+let scale = 1.0;
+let growing = true;
+
 function animate() {
   requestAnimationFrame(animate);
-  if (growing) { scale += SPEED; if (scale >= MAX_SCALE) { scale = MAX_SCALE; growing = false; } }
-  else { scale -= SPEED; if (scale <= 1.0) { scale = 1.0; growing = true; if (!subdivisionGenerated) { createSubdivision(); subdivisionGenerated = true; } } }
+  if (growing) {
+    scale += SPEED;
+    if (scale >= MAX_SCALE) {
+      scale = MAX_SCALE;
+      growing = false;
+    }
+  } else {
+    scale -= SPEED;
+    if (scale <= 1.0) {
+      scale = 1.0;
+      growing = true;
+      if (!subdivisionGenerated) {
+        createSubdivision();
+        subdivisionGenerated = true;
+      }
+    }
+  }
   if (scale > 1.0) subdivisionGenerated = false;
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   fragments.forEach(frag => drawFragment(frag, scale));
 }
+
 requestAnimationFrame(animate);
 
 function drawFragment(fragment: Fragment, s: number) {
@@ -154,7 +200,8 @@ function drawFragment(fragment: Fragment, s: number) {
     const localOffsetY = v.y - fragment.centroid.y;
     const vx = cx + localOffsetX;
     const vy = cy + localOffsetY;
-    if (i === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+    if (i === 0) ctx.moveTo(vx, vy);
+    else ctx.lineTo(vx, vy);
   });
   ctx.closePath();
   ctx.fillStyle = fragment.color;
