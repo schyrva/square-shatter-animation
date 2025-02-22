@@ -53,12 +53,9 @@ function cutPolygonWithLine(polygon: Polygon, p1: Point, p2: Point): Polygon[] {
     if (sideCurrent >= 0) polyA.push(current);
     if (sideCurrent <= 0) polyB.push(current);
     const intersect = segmentIntersection(current, next, p1, p2);
-    if (intersect) {
-      polyA.push(intersect);
-      polyB.push(intersect);
-    }
+    if (intersect) { polyA.push(intersect); polyB.push(intersect); }
   }
-  return (polyA.length === 0 || polyB.length === 0) ? [polygon] : [polyA, polyB];
+  return polyA.length === 0 || polyB.length === 0 ? [polygon] : [polyA, polyB];
 }
 
 function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon[] {
@@ -71,10 +68,7 @@ function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon
 
 function computeCentroid(polygon: Polygon): Point {
   let sumX = 0, sumY = 0;
-  for (const p of polygon) {
-    sumX += p.x;
-    sumY += p.y;
-  }
+  for (const p of polygon) { sumX += p.x; sumY += p.y; }
   return { x: sumX / polygon.length, y: sumY / polygon.length };
 }
 
@@ -94,13 +88,8 @@ interface Fragment {
 }
 
 function polygonsToFragments(polygons: Polygon[]): Fragment[] {
-  return polygons
-    .filter(poly => poly.length >= 3 && polygonArea(poly) > 3)
-    .map(poly => ({
-      vertices: poly,
-      centroid: computeCentroid(poly),
-      color: getRandomColor()
-    }));
+  return polygons.filter(poly => poly.length >= 3 && polygonArea(poly) > 3)
+    .map(poly => ({ vertices: poly, centroid: computeCentroid(poly), color: getRandomColor() }));
 }
 
 function getRandomColor(): string {
@@ -108,4 +97,48 @@ function getRandomColor(): string {
   const g = Math.floor(100 + Math.random() * 155);
   const b = Math.floor(100 + Math.random() * 155);
   return `rgb(${r}, ${g}, ${b})`;
+}
+
+let canvasWidth = window.innerWidth;
+let canvasHeight = window.innerHeight;
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+let innerSquareSize: number;
+let offsetX: number;
+let offsetY: number;
+let squareCenter: Point;
+
+function resizeCanvas() {
+  canvasWidth = window.innerWidth;
+  canvasHeight = window.innerHeight;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const minDimension = Math.min(canvasWidth, canvasHeight);
+  innerSquareSize = minDimension / 4;
+  offsetX = (canvasWidth - innerSquareSize) / 2;
+  offsetY = (canvasHeight - innerSquareSize) / 2;
+  squareCenter = { x: offsetX + innerSquareSize / 2, y: offsetY + innerSquareSize / 2 };
+  createSubdivision();
+}
+
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function createSubdivision() {
+  let polygons: Polygon[] = [[
+    { x: offsetX, y: offsetY },
+    { x: offsetX + innerSquareSize, y: offsetY },
+    { x: offsetX + innerSquareSize, y: offsetY + innerSquareSize },
+    { x: offsetX, y: offsetY + innerSquareSize }
+  ]];
+  const lineCount = Math.floor(Math.random() * 20) + 1;
+  const lines = generateRandomLines(lineCount, innerSquareSize);
+  const adjustedLines = lines.map(([p1, p2]) => ([
+    { x: p1.x + offsetX, y: p1.y + offsetY },
+    { x: p2.x + offsetX, y: p2.y + offsetY }
+  ]) as Line);
+  for (const [p1, p2] of adjustedLines) {
+    polygons = cutPolygonsWithLine(polygons, p1, p2);
+  }
+  fragments = polygonsToFragments(polygons);
 }
