@@ -3,11 +3,7 @@ let ctx = canvas.getContext("2d")!;
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-interface Point {
-  x: number;
-  y: number;
-}
-
+interface Point { x: number; y: number; }
 type Polygon = Point[];
 type Line = [Point, Point];
 
@@ -44,8 +40,7 @@ function segmentIntersection(p1: Point, p2: Point, p3: Point, p4: Point): Point 
 }
 
 function cutPolygonWithLine(polygon: Polygon, p1: Point, p2: Point): Polygon[] {
-  const polyA: Polygon = [];
-  const polyB: Polygon = [];
+  const polyA: Polygon = [], polyB: Polygon = [];
   for (let i = 0; i < polygon.length; i++) {
     const current = polygon[i];
     const next = polygon[(i + 1) % polygon.length];
@@ -55,7 +50,7 @@ function cutPolygonWithLine(polygon: Polygon, p1: Point, p2: Point): Polygon[] {
     const intersect = segmentIntersection(current, next, p1, p2);
     if (intersect) { polyA.push(intersect); polyB.push(intersect); }
   }
-  return polyA.length === 0 || polyB.length === 0 ? [polygon] : [polyA, polyB];
+  return (polyA.length === 0 || polyB.length === 0) ? [polygon] : [polyA, polyB];
 }
 
 function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon[] {
@@ -141,4 +136,40 @@ function createSubdivision() {
     polygons = cutPolygonsWithLine(polygons, p1, p2);
   }
   fragments = polygonsToFragments(polygons);
+}
+
+let scale = 1.0, growing = true;
+function animate() {
+  requestAnimationFrame(animate);
+  if (growing) {
+    scale += 0.02;
+    if (scale >= 4.0) { scale = 4.0; growing = false; }
+  } else {
+    scale -= 0.02;
+    if (scale <= 1.0) { scale = 1.0; growing = true; if (!subdivisionGenerated) { createSubdivision(); subdivisionGenerated = true; } }
+  }
+  if (scale > 1.0) subdivisionGenerated = false;
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  fragments.forEach(frag => drawFragment(frag, scale));
+}
+requestAnimationFrame(animate);
+
+function drawFragment(fragment: Fragment, s: number) {
+  const cx = squareCenter.x + s * (fragment.centroid.x - squareCenter.x);
+  const cy = squareCenter.y + s * (fragment.centroid.y - squareCenter.y);
+  ctx.beginPath();
+  fragment.vertices.forEach((v, i) => {
+    const localOffsetX = v.x - fragment.centroid.x;
+    const localOffsetY = v.y - fragment.centroid.y;
+    const vx = cx + localOffsetX;
+    const vy = cy + localOffsetY;
+    if (i === 0) ctx.moveTo(vx, vy);
+    else ctx.lineTo(vx, vy);
+  });
+  ctx.closePath();
+  ctx.fillStyle = fragment.color;
+  ctx.fill();
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 1;
+  ctx.stroke();
 }
