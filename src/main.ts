@@ -42,3 +42,29 @@ function segmentIntersection(p1: Point, p2: Point, p3: Point, p4: Point): Point 
   if (ua < 0 || ua > 1 || ub < 0 || ub > 1) return null;
   return { x: p1.x + ua * (p2.x - p1.x), y: p1.y + ua * (p2.y - p1.y) };
 }
+
+function cutPolygonWithLine(polygon: Polygon, p1: Point, p2: Point): Polygon[] {
+  const polyA: Polygon = [];
+  const polyB: Polygon = [];
+  for (let i = 0; i < polygon.length; i++) {
+    const current = polygon[i];
+    const next = polygon[(i + 1) % polygon.length];
+    const sideCurrent = lineSide(p1, p2, current);
+    if (sideCurrent >= 0) polyA.push(current);
+    if (sideCurrent <= 0) polyB.push(current);
+    const intersect = segmentIntersection(current, next, p1, p2);
+    if (intersect) {
+      polyA.push(intersect);
+      polyB.push(intersect);
+    }
+  }
+  return (polyA.length === 0 || polyB.length === 0) ? [polygon] : [polyA, polyB];
+}
+
+function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon[] {
+  let result: Polygon[] = [];
+  for (const poly of polygons) {
+    result = result.concat(cutPolygonWithLine(poly, p1, p2));
+  }
+  return result;
+}
