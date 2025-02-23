@@ -12,7 +12,8 @@ An interactive animation that displays a square breaking into randomly generated
 
 ## Demo
 
-[Live Demo](https://square-shatter-animation.vercel.app/)
+❗[Live Demo](https://square-shatter-animation.vercel.app/)❗
+
 
 ![Animation Preview](assets/preview.gif)
 
