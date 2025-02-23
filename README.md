@@ -12,7 +12,7 @@ An interactive animation that displays a square breaking into randomly generated
 
 ## Demo
 
-[Live Demo](https://square-shatter-animation.vercel.app) (Add your deployment URL)
+[Live Demo](https://square-shatter-animation.vercel.app/)
 
 ![Animation Preview](assets/preview.gif)
 
@@ -28,7 +28,7 @@ An interactive animation that displays a square breaking into randomly generated
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/square-shatter-animation.git
+git clone https://github.com/schyrva/square-shatter-animation.git
 cd square-shatter-animation
 ```
 
@@ -77,7 +77,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ## Author
 
-Stanislav Chyrva - [GitHub](https://github.com/schyrva), [LinkedIn](https://www.linkedin.com/in/stanislav-chyrva-3a3b24347/), stanislav.chyrva@gmail.com  
+Stanislav Chyrva - [GitHub](https://github.com/schyrva), [LinkedIn](https://www.linkedin.com/in/stanislav-chyrva-3a3b24347/), stanislav.chyrva@gmail.com
 
 ## Acknowledgments
 
