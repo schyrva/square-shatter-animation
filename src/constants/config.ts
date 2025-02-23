@@ -3,9 +3,10 @@ export const SPEED = 0.03;
 export const MAX_SCALE = 4.0;
 
 // Geometry
-export const AREA_THRESHOLD = 3;
-export const MIN_LINES = 3;
-export const MAX_LINES = 50;
+export const AREA_THRESHOLD = 10;
+export const MIN_LINES = 10;
+export const MAX_LINES = 60;
+
 
 // Colors
 export const MIN_RGB = 100;
