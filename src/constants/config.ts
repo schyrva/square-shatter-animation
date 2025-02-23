@@ -1,10 +1,10 @@
 // Animation
-export const SPEED = 0.032;
+export const SPEED = 0.04;
 export const MAX_SCALE = 4.0;
 
 // Geometry
 export const AREA_THRESHOLD = 3;
-export const MIN_LINES = 1;
+export const MIN_LINES = 3;
 export const MAX_LINES = 50;
 
 // Colors
