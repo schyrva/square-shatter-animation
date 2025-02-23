@@ -33,14 +33,24 @@ function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon
 }
 
 // Converts polygons to fragments with colors and centroids
-function polygonsToFragments(polygons: Polygon[]): Fragment[] {
+export function polygonsToFragments(polygons: Polygon[]): Fragment[] {
   return polygons
     .filter((poly) => poly.length >= 3 && polygonArea(poly) > AREA_THRESHOLD)
-    .map((poly) => ({
-      vertices: poly,
-      centroid: computeCentroid(poly),
-      color: getRandomColor(),
-    }));
+    .map((poly) => {
+      const centroid = computeCentroid(poly);
+
+      const localOffsets = poly.map((v) => ({
+        x: v.x - centroid.x,
+        y: v.y - centroid.y,
+      }));
+
+      return {
+        vertices: poly,
+        centroid,
+        localOffsets,
+        color: getRandomColor(),
+      };
+    });
 }
 
 // Creates new subdivision of the square using random lines

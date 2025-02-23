@@ -12,7 +12,8 @@ export type Line = [Point, Point];
 
 // Represents a fragment of the shattered square
 export interface Fragment {
-  vertices: Point[]; // Points defining the fragment's shape
-  centroid: Point; // Geometric center of the fragment
-  color: string; // RGB color value
+  vertices: Point[];
+  centroid: Point;
+  localOffsets: Point[];
+  color: string;
 }
