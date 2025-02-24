@@ -1,12 +1,14 @@
-import { Point, Fragment, Polygon } from './types/types';
-import { SPEED, MAX_SCALE, AREA_THRESHOLD, MIN_LINES, MAX_LINES } from './constants/config';
-import { cutPolygonWithLine, computeCentroid, polygonArea } from './utils/geometry';
-import { generateRandomLines, getRandomColor } from './utils/random';
-import { drawFragment } from './utils/canvas';
+import { Point, Fragment, Polygon } from "./types/types";
+import { SPEED, MAX_SCALE, AREA_THRESHOLD, MIN_LINES, MAX_LINES } from "./constants/config";
+import { cutPolygonWithLine, computeCentroid, polygonArea } from "./utils/geometry";
+import { generateRandomLines, getRandomColor } from "./utils/random";
+import { drawFragment } from "./utils/canvas";
 
-// Initialize canvas and context
-const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const ctx = canvas.getContext('2d')!;
+/**
+ * Initializes canvas and context.
+ */
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const ctx = canvas.getContext("2d")!;
 
 // Global state variables
 let canvasWidth = window.innerWidth;
@@ -23,22 +25,27 @@ let growing = true;
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
 
-// Applies line cutting to multiple polygons
+/**
+ * Applies line cutting to multiple polygons.
+ */
 function cutPolygonsWithLine(polygons: Polygon[], p1: Point, p2: Point): Polygon[] {
   let result: Polygon[] = [];
+
   for (const poly of polygons) {
     result = result.concat(cutPolygonWithLine(poly, p1, p2));
   }
+
   return result;
 }
 
-// Converts polygons to fragments with colors and centroids
+/**
+ * Converts polygons to fragments with colors and centroids.
+ */
 export function polygonsToFragments(polygons: Polygon[]): Fragment[] {
   return polygons
     .filter((poly) => poly.length >= 3 && polygonArea(poly) > AREA_THRESHOLD)
     .map((poly) => {
       const centroid = computeCentroid(poly);
-
       const localOffsets = poly.map((v) => ({
         x: v.x - centroid.x,
         y: v.y - centroid.y,
@@ -53,9 +60,10 @@ export function polygonsToFragments(polygons: Polygon[]): Fragment[] {
     });
 }
 
-// Creates new subdivision of the square using random lines
+/**
+ * Creates a new subdivision of the square using random lines.
+ */
 function createSubdivision(): void {
-  // Initial square polygon
   let polygons: Polygon[] = [
     [
       { x: offsetX, y: offsetY },
@@ -65,7 +73,6 @@ function createSubdivision(): void {
     ],
   ];
 
-  // Generate and apply random cutting lines
   const lineCount = Math.floor(Math.random() * (MAX_LINES - MIN_LINES + 1)) + MIN_LINES;
   const lines = generateRandomLines(lineCount, innerSquareSize);
 
@@ -81,7 +88,9 @@ function createSubdivision(): void {
   fragments = polygonsToFragments(polygons);
 }
 
-// Handles canvas resize and recalculates dimensions
+/**
+ * Handles canvas resize and recalculates dimensions.
+ */
 function resizeCanvas(): void {
   canvasWidth = window.innerWidth;
   canvasHeight = window.innerHeight;
@@ -100,11 +109,12 @@ function resizeCanvas(): void {
   createSubdivision();
 }
 
-// Main animation loop
+/**
+ * Main animation loop.
+ */
 function animate(): void {
   requestAnimationFrame(animate);
 
-  // Handle scaling animation
   if (growing) {
     scale += SPEED;
     if (scale >= MAX_SCALE) {
@@ -123,14 +133,15 @@ function animate(): void {
     }
   }
 
-  if (scale > 1.0) subdivisionGenerated = false;
+  if (scale > 1.0) {
+    subdivisionGenerated = false;
+  }
 
-  // Clear and redraw all fragments
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   fragments.forEach((frag) => drawFragment(ctx, frag, scale, squareCenter));
 }
 
 // Setup event listeners and start animation
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 requestAnimationFrame(animate);
