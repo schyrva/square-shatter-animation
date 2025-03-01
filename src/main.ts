@@ -1,14 +1,21 @@
-import { Point, Fragment, Polygon } from "./types/types";
-import { SPEED, MAX_SCALE, AREA_THRESHOLD, MIN_LINES, MAX_LINES } from "./constants/config";
-import { cutPolygonWithLine, computeCentroid, polygonArea } from "./utils/geometry";
-import { generateRandomLines, getRandomColor } from "./utils/random";
-import { drawFragment } from "./utils/canvas";
+import { Point, Fragment, Polygon } from './types/types';
+import { SPEED, MAX_SCALE, AREA_THRESHOLD, MIN_LINES, MAX_LINES } from './constants/config';
+import { cutPolygonWithLine, computeCentroid, polygonArea } from './utils/geometry';
+import { generateRandomLines, getRandomColor } from './utils/random';
+import { drawFragment } from './utils/canvas';
+import { createSvgFragment, updateSvgFragment, clearSvg } from './utils/svg';
 
 /**
  * Initializes canvas and context.
  */
-const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-const ctx = canvas.getContext("2d")!;
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const svgContainer = document.getElementById('svg-container') as unknown as SVGSVGElement;
+const renderToggle = document.getElementById('render-toggle') as HTMLInputElement;
+const toggleLabel = document.querySelector('.toggle-label') as HTMLSpanElement;
+
+// Rendering mode
+let useSvg = false;
 
 // Global state variables
 let canvasWidth = window.innerWidth;
@@ -18,12 +25,15 @@ let offsetX: number;
 let offsetY: number;
 let squareCenter: Point;
 let fragments: Fragment[] = [];
+let svgPolygons: SVGPolygonElement[] = [];
 let subdivisionGenerated = false;
 let scale = 1.0;
 let growing = true;
 
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
+svgContainer.setAttribute('width', canvasWidth.toString());
+svgContainer.setAttribute('height', canvasHeight.toString());
 
 /**
  * Applies line cutting to multiple polygons.
@@ -86,6 +96,36 @@ function createSubdivision(): void {
   }
 
   fragments = polygonsToFragments(polygons);
+
+  // Create SVG elements if using SVG
+  if (useSvg) {
+    createSvgElements();
+  }
+}
+
+/**
+ * Creates SVG elements for all fragments
+ */
+function createSvgElements(): void {
+  // Clear existing SVG elements
+  clearSvg(svgContainer);
+  svgPolygons = [];
+
+  // Create new SVG elements
+  fragments.forEach((fragment) => {
+    const polygon = createSvgFragment(fragment, scale, squareCenter);
+    svgContainer.appendChild(polygon);
+    svgPolygons.push(polygon);
+  });
+}
+
+/**
+ * Updates SVG elements with current scale
+ */
+function updateSvgElements(): void {
+  fragments.forEach((fragment, index) => {
+    updateSvgFragment(svgPolygons[index], fragment, scale, squareCenter);
+  });
 }
 
 /**
@@ -96,6 +136,8 @@ function resizeCanvas(): void {
   canvasHeight = window.innerHeight;
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
+  svgContainer.setAttribute('width', canvasWidth.toString());
+  svgContainer.setAttribute('height', canvasHeight.toString());
 
   const minDimension = Math.min(canvasWidth, canvasHeight);
   innerSquareSize = minDimension / 4;
@@ -107,6 +149,23 @@ function resizeCanvas(): void {
   };
 
   createSubdivision();
+}
+
+/**
+ * Toggles between Canvas and SVG rendering
+ */
+function toggleRenderMode(): void {
+  useSvg = renderToggle.checked;
+  toggleLabel.textContent = useSvg ? 'SVG' : 'Canvas';
+
+  if (useSvg) {
+    canvas.style.display = 'none';
+    svgContainer.style.display = 'block';
+    createSvgElements();
+  } else {
+    canvas.style.display = 'block';
+    svgContainer.style.display = 'none';
+  }
 }
 
 /**
@@ -137,11 +196,16 @@ function animate(): void {
     subdivisionGenerated = false;
   }
 
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  fragments.forEach((frag) => drawFragment(ctx, frag, scale, squareCenter));
+  if (useSvg) {
+    updateSvgElements();
+  } else {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    fragments.forEach((frag) => drawFragment(ctx, frag, scale, squareCenter));
+  }
 }
 
 // Setup event listeners and start animation
-window.addEventListener("resize", resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+renderToggle.addEventListener('change', toggleRenderMode);
 resizeCanvas();
 requestAnimationFrame(animate);
